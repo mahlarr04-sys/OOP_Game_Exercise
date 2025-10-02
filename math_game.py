@@ -111,23 +111,142 @@ class Enemy(Character):
         return f"👹 {self.name} (Lv.{self.level}) – HP: {self.health}/{self.max_health} – DMG: {self.damage}"
 
 
-
-#کلاس ایتم
+# ======================
+# کلاس آیتم: Item
+# ======================
 class Item:
-    def __init__(self , name ,effect):
-        pass
+    def __init__(self, name, kind, value):
+        self.name = name    # نام آیتم (مثلاً Potion)
+        self.kind = kind    # نوع اثر: heal / ...
+        self.value = value  # مقدار اثر (مثلاً چند HP)
+
     def __str__(self):
-        pass
-#حلقه اصلی بازی
+        if self.kind == "heal":
+            return f"{self.name} (+{self.value} HP)"
+        return f"{self.name} ({self.kind}: {self.value})"
+
+
+# ======================
+# کلاس سوال ریاضی: Question
+# ======================
+class Question:
+    def __init__(self, a, b, op_symbol, answer):
+        self.a = a
+        self.b = b
+        self.op_symbol = op_symbol
+        self.answer = answer
+
+    def text(self):
+        return f"{self.a} {self.op_symbol} {self.b} = ?"
+
+    def check_answer(self, user_answer):
+        try:
+            return int(user_answer) == self.answer
+        except ValueError:
+            return False
+
+
+def generate_question(level):
+    # سختی بر اساس سطح: اعداد بزرگ‌تر با سطح بالاتر
+    max_n = 10 + level * 5
+    a = random.randint(1, max_n)
+    b = random.randint(1, max_n)
+    op_symbol = random.choice(["+", "-", "*"])
+    if op_symbol == "+":
+        ans = a + b
+    elif op_symbol == "-":
+        ans = a - b
+    else:
+        ans = a * b
+    return Question(a, b, op_symbol, ans)
+
+
+# ======================
+# توابع کمکی رابط کاربری
+# ======================
+def print_status(player, enemy):
+    print("\n================ STATUS ================")
+    print(player)
+    print(enemy)
+    print("=======================================\n")
+
+
+def list_inventory(player):
+    if not player.inventory:
+        print("📭 کیف خالی است.")
+        return
+    print("🎒 آیتم‌ها:")
+    for i, it in enumerate(player.inventory, 1):
+        print(f"  {i}. {it}")
+
+
+# ======================
+# حلقه اصلی بازی
+# ======================
 def game():
-    pass
-#اجرا بازی - فراخوانی
-if __name__  =="__main__":
+    print("🎮 خوش آمدی به بازی: چالش ریاضی برای بقا")
+    name = input("نام بازیکن را وارد کن: ").strip() or "Player"
+    player = Player(name, health=100, level=1)
+    # آیتم شروع
+    player.add_item(Item("Potion", "heal", 20))
+
+    # یک دشمن ساده
+    enemy = Enemy("Goblin", health=60, level=1, damage=10)
+
+    print_status(player, enemy)
+
+    # حلقه مبارزه
+    while player.is_alive() and enemy.is_alive():
+        print("یک گزینه را انتخاب کن:")
+        print("1) حمله (با حل سوال ریاضی)")
+        print("2) استفاده از آیتم")
+        print("3) نمایش آیتم‌ها")
+        choice = input("> ").strip()
+
+        if choice == "1":
+            # حمله با سوال
+            q = generate_question(player.level)
+            print("❓ سوال:", q.text())
+            ans = input("جواب: ").strip()
+            if q.check_answer(ans):
+                damage = 10 + player.level * 5
+                print(f"✅ درست گفتی! {damage} آسیب به دشمن وارد شد.")
+                enemy.take_damage(damage)
+                player.gain_xp(15)
+                # شانس جایزه
+                if random.random() < 0.3:
+                    reward = Item("Potion", "heal", 20)
+                    player.add_item(reward)
+                    print(f"🎁 جایزه گرفتی: {reward}")
+            else:
+                print("❌ اشتباه! نوبت دشمن است.")
+                enemy.attack(player)
+
+        elif choice == "2":
+            list_inventory(player)
+            item_name = input("اسم آیتم برای استفاده: ").strip()
+            if item_name:
+                player.use_item(item_name)
+
+        elif choice == "3":
+            list_inventory(player)
+
+        else:
+            print("⚠️ گزینه نامعتبر.")
+
+        print_status(player, enemy)
+
+    # پایان
+    if player.is_alive() and not enemy.is_alive():
+        print("🏆 تبریک! دشمن را شکست دادی.")
+    elif not player.is_alive():
+        print("☠️ باختی! بازی تمام شد.")
+    else:
+        print("🏁 بازی به پایان رسید.")
+
+
+# اجرای بازی
+if __name__ == "__main__":
     game()
 
-print
-
-
-
-    
-                
+# بگو «اوکی» تا از **اولین خط** شروع کنم و دقیقاً «کلمه‌به‌کلمه» توضیح بدم.
